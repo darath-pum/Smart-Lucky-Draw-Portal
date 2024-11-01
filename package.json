@@ -1,0 +1,19 @@
+{
+  "name": "smart-luckydraw-portal",
+  "version": "1.0.0",
+  "description": "Portal project for Smart Lucky Draw game",
+  "main": "index.js",
+  "scripts": {
+    "dev-server": "npm run dev --prefix server",
+    "dev-client": "npm run dev --prefix dashboard",
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\"",
+    "build-server": "npm run build --prefix server",
+    "build-client": "npm run build --prefix dashboard",
+    "build": "npm run build-server && npm run build-client"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
