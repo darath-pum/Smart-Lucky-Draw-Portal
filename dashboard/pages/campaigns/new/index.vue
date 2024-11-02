@@ -96,8 +96,8 @@
                     <td>
                         <div class="text-start">
                             <label for="" v-if="pathName == 'quantity' && numberIndex == index" class="text-red">{{
-                            invalidMessage
-                        }}</label>
+                                invalidMessage
+                                }}</label>
                             <input id="number-prize" type="number" class="resize-none focus:outline-none"
                                 placeholder="15" v-model="prize.quantity" required min="1"
                                 @input="checkeQuantity(prize.quantity, index)"
@@ -327,23 +327,42 @@ const addCampaign = async () => {
     hasProgressbar.value = true;
     let timeout: any;
     loadingText.value = 'Uploading your request to server...'
-    const res = await callAPIProgress("/campaign/createCampaign", "POST", formData, (progress: number) => {
-        uploadProgress.value = progress;
-        if (progress === 1) {
-            timeout = setTimeout(() => {
-                loadingText.value = 'Processing your request...';
-                hasProgressbar.value = false;
-            }, 1000);
+    try {
+
+        const res = await callAPIProgress("/campaign/createCampaign", "POST", formData, (progress: number) => {
+            uploadProgress.value = progress;
+            if (progress === 1) {
+                timeout = setTimeout(() => {
+                    loadingText.value = 'Processing your request...';
+                    hasProgressbar.value = false;
+                }, 1000);
+            }
+        });
+        clearTimeout(timeout);
+
+        isLoading.value = false;
+
+        if (res.status === 200) {
+            window.location.href = "/campaigns";
+        } else {
+            // Log error response for debugging
+            console.log(res.error);
+
+            if (res.error == 'Invalid CSV format') {
+                pathName.value = 'participant';
+                invalidMessage.value = res.error;
+
+            }
+            // console.error("Error response received:", res);
+            // const error: any = res.error;
+            // pathName.value = error.details[0]?.path[0] || "unknown";
+            // invalidMessage.value = error.details[0]?.message || "An error occurred";
         }
-    });
-    clearTimeout(timeout);
-    isLoading.value = false;
-    if (res.status == 200) {
-        window.location.href = "/campaigns";
-    } else {
-        const error: any = res.error;
-        pathName.value = error.details[0].path[0];
-        invalidMessage.value = error.details[0].message;
+
+    } catch (error: any) {
+        isLoading.value = false;
+        console.error("Error during API request:", error); // Log API request error
+        invalidMessage.value = error.message || "An unexpected error occurred";
     }
 };
 

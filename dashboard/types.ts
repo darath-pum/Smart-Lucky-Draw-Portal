@@ -46,5 +46,5 @@ export interface IAPIResponse {
   status: number;
   code: number;
   data?: any;
-  error?: string;
+  error?: any;
 }

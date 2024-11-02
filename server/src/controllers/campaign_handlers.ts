@@ -28,21 +28,33 @@ async function insertParticipantsToCampaign(campaignId, req, poolClient) {
   // Wrap the CSV parsing in a Promise
   return new Promise((resolve, reject) => {
     const readableStream = Readable.from(fileBuffer);
-    let rowCount = 0; // Track the number of rows processed
+    let rowCount = 0;
+    let headerValidated = false; 
 
     readableStream
       .pipe(csv())
+      .on("headers", (headers) => {
+       
+        if (headers.length !== 2) {
+          reject(new Error("Invalid CSV format"));
+          readableStream.destroy();
+          return;
+        }
+        headerValidated = true; 
+      })
       .on("data", (row) => {
+        if (!headerValidated) return;
+
         const columns = Object.keys(row);
 
         // Check if the row has exactly 2 keys (columns)
         if (columns.length !== 2) {
           reject(new Error("Invalid CSV format"));
-          readableStream.destroy(); // Stop further processing
+          readableStream.destroy(); 
           return;
         }
 
-        // Extract the phone number from the "Entry" column
+        // Extract the phone number from the second column
         const phoneNumber = row[columns[1]].replace(/\D/g, "");
         phoneNumbers.push(phoneNumber);
         rowCount++; // Increment the row count
@@ -63,9 +75,9 @@ async function insertParticipantsToCampaign(campaignId, req, poolClient) {
           // Insert each phone number into the database
           for (let i = 0; i < phoneNumbers.length; i++) {
             const phoneNumber = phoneNumbers[i];
-            console.log(phoneNumber)
             const sql = `INSERT INTO ${TablesName.Participants} (campaign_id, msisdn) VALUES ($1, $2) RETURNING id`;
             const values = [campaignId, phoneNumber];
+            console.log(phoneNumber)
             
             // Execute the query to insert the participants into the database.
             await poolClient.query(sql, values);

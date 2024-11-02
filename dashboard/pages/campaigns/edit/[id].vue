@@ -403,21 +403,25 @@ const updateCampaign = async () => {
   const errCampaignName = validateCampaignName(campaign_name.value);
   const errStartDate = validateDate(start_date.value);
   const errEndDate = validateDate(end_date.value);
+  
   if (errCampaignName) {
     pathName.value = "campaign_name";
     invalidMessage.value = errCampaignName;
     return;
   }
+  
   if (errStartDate) {
     pathName.value = "start_date";
     invalidMessage.value = errStartDate;
     return;
   }
+  
   if (errEndDate) {
     pathName.value = "end_date";
     invalidMessage.value = errEndDate;
     return;
   }
+  
   const prizePool = prizeInCampaigns.value || [];
   if (prizePool.length === 0) {
     invalidMessage.value = "Prize pool is empty";
@@ -429,14 +433,19 @@ const updateCampaign = async () => {
 
   const formData = new FormData();
   formData.set("campaign_name", campaign_name.value);
+  
   // Only update if has changes
-  if (originalImage !== campaign_image.value)
+  if (originalImage !== campaign_image.value) {
     formData.set("campaign_image", campaign_image.value || defaultCampaignBGURL);
+  }
+  
   formData.set("start_date", start_date.value);
   formData.set("end_date", end_date.value);
+  
   if (participantsFile.value) {
     formData.set("participants", participantsFile.value);
   }
+  
   formData.set("number_of_chance", number_of_chance.value.toString());
   formData.set("prizes", JSON.stringify(prizeInCampaigns.value));
   formData.set("invited_email", JSON.stringify(arrEmailInvites.value));
@@ -444,26 +453,48 @@ const updateCampaign = async () => {
   isLoading.value = true;
   hasProgressbar.value = true;
   let timeout: any;
-  loadingText.value = 'Uploading your request to server...'
-  const res = await callAPIProgress(`/campaign/updateCampaign/${campaignId}`, "PUT", formData, (progress: number) => {
-    uploadProgress.value = progress;
-    if (progress === 1) {
-      timeout = setTimeout(() => {
-        loadingText.value = 'Processing your request...';
-        hasProgressbar.value = false;
-      }, 1000);
-    }
-  });
-  clearTimeout(timeout);
-  isLoading.value = false;
-  if (res.status == 200) {
-    window.location.href = "/campaigns";
-  } else {
-    const error: any = res.error;
-    pathName.value = error.details[0].path[0];
-    invalidMessage.value = error.details[0].message;
-  }
+  loadingText.value = 'Uploading your request to server...';
+  
+  try {
+    const res = await callAPIProgress(`/campaign/updateCampaign/${campaignId}`, "PUT", formData, (progress: number) => {
+      uploadProgress.value = progress;
+      if (progress === 1) {
+        timeout = setTimeout(() => {
+          loadingText.value = 'Processing your request...';
+          hasProgressbar.value = false;
+        }, 1000);
+      }
+    });
+    clearTimeout(timeout);
+    
+    isLoading.value = false;
+    
+    if (res.status === 200) {
+      console.log(isLoading.value);
+      
+      // window.location.href = "/campaigns";
+    } else {
+      // Log error response for debugging
+      console.log(isLoading.value);
 
+      console.log(res.error);
+      
+      if (res.error == 'Invalid CSV format') {
+        pathName.value = 'participant';
+        invalidMessage.value = res.error;
+        
+      }
+      // console.error("Error response received:", res);
+      // const error: any = res.error;
+      // pathName.value = error.details[0]?.path[0] || "unknown";
+      // invalidMessage.value = error.details[0]?.message || "An error occurred";
+    }
+
+  } catch (error:any) {
+    isLoading.value = false;
+    console.error("Error during API request:", error); // Log API request error
+    invalidMessage.value = error.message || "An unexpected error occurred";
+  }
 };
 // =================================
 
